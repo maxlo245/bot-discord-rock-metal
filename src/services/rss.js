@@ -46,6 +46,7 @@ const MAX_ITEMS_PER_FEED = 2;
 
 // Patterns à exclure uniquement sur les feeds qui ne sont PAS des sites de reviews
 const REVIEW_PATTERNS = [
+  /\breview\b/i,          // "Periphery – A Pale White Dot Review", "Album Review: …"
   /^review[:\s]/i,
   /\balbum review\b/i,
   /\bep review\b/i,
