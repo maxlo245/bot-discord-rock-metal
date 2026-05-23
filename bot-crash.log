@@ -1,0 +1,34 @@
+[23/05/2026 02:17:38] ­ƒöÁ [INFO] [Commands] Charg├®: /check
+[23/05/2026 02:17:38] ­ƒöÁ [INFO] [Commands] Charg├®: /help
+[23/05/2026 02:17:38] ­ƒöÁ [INFO] [Commands] Charg├®: /setup
+[23/05/2026 02:17:38] ­ƒöÁ [INFO] [Commands] Charg├®: /sources
+[23/05/2026 02:17:38] ­ƒöÁ [INFO] [Commands] Charg├®: /status
+[23/05/2026 02:17:38] ­ƒöÁ [INFO] [Deploy] D├®ploiement de 5 commande(s) slash...
+[23/05/2026 02:17:38] ­ƒƒó [SUCCESS] [Deploy] Commandes slash d├®ploy├®es globalement.
+[23/05/2026 02:17:39] ­ƒƒó [SUCCESS] 
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[23/05/2026 02:17:39] ­ƒƒó [SUCCESS]   ­ƒñÿ Metal & Rock Bot connect├® en tant que bot rock/metal#9450
+[23/05/2026 02:17:39] ­ƒƒó [SUCCESS]   ­ƒôí Pr├®sent sur 1 serveur(s)
+[23/05/2026 02:17:39] ­ƒƒó [SUCCESS] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+[23/05/2026 02:17:39] ­ƒöÁ [INFO] [Init] Initialisation des services...
+[23/05/2026 02:17:39] ­ƒöÁ [INFO] [RSS] Initialisation ÔÇö marquage des items existants comme vus...
+(node:30004) DeprecationWarning: The ready event has been renamed to clientReady to distinguish it from the gateway READY event and will only emit under that name in v15. Please use clientReady instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[23/05/2026 02:17:43] ­ƒƒí [WARN] [RSS Init] Erreur sur "Lambgoat": Status code 500
+[23/05/2026 02:17:46] ­ƒƒí [WARN] [RSS Init] Erreur sur "Metal Underground": unable to verify the first certificate; if the root CA is installed locally, try running Node.js with --use-system-ca
+[23/05/2026 02:17:54] ­ƒƒí [WARN] [RSS Init] Erreur sur "Kerrang!": Status code 404
+[23/05/2026 02:17:54] ­ƒƒí [WARN] [RSS Init] Erreur sur "Sputnikmusic": Status code 404
+[23/05/2026 02:17:54] ­ƒƒí [WARN] [RSS Init] Erreur sur "Nuclear Blast": Status code 404
+[23/05/2026 02:17:57] ­ƒƒí [WARN] [RSS Init] Erreur sur "Napalm Records": Status code 404
+[23/05/2026 02:17:58] ­ƒƒí [WARN] [RSS Init] Erreur sur "Metal Blade Records": Attribute without value
+Line: 103
+Column: 1132
+Char: >
+[23/05/2026 02:17:58] ­ƒƒó [SUCCESS] [RSS] Initialisation termin├®e: 25 flux OK, 7 flux en erreur
+[23/05/2026 02:17:58] ­ƒƒí [WARN] [Spotify] Non configur├®, ignor├®
+[23/05/2026 02:17:58] ­ƒƒí [WARN] [Last.fm] Non configur├®, ignor├®
+[23/05/2026 02:17:59] ­ƒƒí [WARN] [MetalArchives] Erreur initialisation: Request failed with status code 403
+[23/05/2026 02:17:59] ­ƒƒó [SUCCESS] [Scheduler] D├®marr├®: RSS/15min, Spotify/60min, Last.fm/60min, MA/120min
+[23/05/2026 02:17:59] ­ƒƒó [SUCCESS] [Bot] Pr├¬t ! En attente de nouvelles annonces...
+

@@ -1,0 +1,23 @@
+{
+  "name": "metal-rock-discord-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord pour les annonces Metal & Rock — sorties, news, nouveaux groupes",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "sharp": "^0.34.5"
+  }
+}

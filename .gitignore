@@ -1,0 +1,15 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement (contient le token Discord — NE JAMAIS commit)
+.env
+
+# Données runtime
+data/seen.json
+
+# Logs PM2
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
