@@ -152,6 +152,7 @@ const RSS_FEEDS = [
     category: 'rock',
     icon: '🎸',
     color: 0xe67e22,
+    strict: true,
   },
   {
     name: 'Louder Sound',
@@ -195,6 +196,7 @@ const RSS_FEEDS = [
     category: 'rock',
     icon: '🎧',
     color: 0xe67e22,
+    strict: true,
   },
   {
     name: 'Kerrang!',
