@@ -13,8 +13,7 @@ module.exports = {
       max_memory_restart: '300M',  // redémarre si > 300 Mo RAM
 
       // ─── Délai entre redémarrages (évite boucle infinie) ─────────────────
-      restart_delay: 5000,         // attend 5s avant de relancer
-      max_restarts: 10,            // max 10 redémarrages consécutifs
+      exp_backoff_restart_delay: 100, // espace les redémarrages répétés sans les arrêter
       min_uptime: '30s',           // doit tenir 30s pour réinitialiser le compteur
 
       // ─── Variables d'environnement ────────────────────────────────────────

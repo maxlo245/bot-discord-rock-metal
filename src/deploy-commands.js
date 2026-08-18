@@ -9,7 +9,7 @@ const path = require('path');
 
 const token    = process.env.DISCORD_TOKEN;
 const clientId = process.env.DISCORD_CLIENT_ID;
-const guildId  = process.env.DISCORD_GUILD_ID; // Optionnel: déploiement rapide sur un seul serveur
+const guildId  = process.env.DISCORD_GUILD_ID; // Optionnel: nettoyage des anciennes commandes locales
 
 if (!token || !clientId) {
   console.error('❌ DISCORD_TOKEN et DISCORD_CLIENT_ID requis dans .env');
@@ -29,14 +29,13 @@ const rest = new REST().setToken(token);
   try {
     console.log(`🔄 Déploiement de ${commands.length} commande(s)...`);
 
+    // Une seule portée évite que Discord affiche chaque commande deux fois.
+    await rest.put(Routes.applicationCommands(clientId), { body: commands });
+    console.log('✅ Commandes déployées globalement (peut prendre jusqu\'à 1 heure)');
+
     if (guildId) {
-      // Déploiement sur un serveur spécifique (instantané)
-      await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: commands });
-      console.log(`✅ Commandes déployées sur le serveur ${guildId}`);
-    } else {
-      // Déploiement global (peut prendre 1h)
-      await rest.put(Routes.applicationCommands(clientId), { body: commands });
-      console.log('✅ Commandes déployées globalement (peut prendre jusqu\'à 1 heure)');
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+      console.log(`✅ Anciennes commandes locales supprimées du serveur ${guildId}`);
     }
   } catch (err) {
     console.error('❌ Erreur:', err.message);

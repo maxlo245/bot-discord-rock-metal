@@ -6,6 +6,7 @@ node_modules/
 
 # Données runtime
 data/seen.json
+data/daily-digest.json
 
 # Logs PM2
 logs/

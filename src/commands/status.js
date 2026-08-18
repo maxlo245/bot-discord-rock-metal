@@ -30,7 +30,8 @@ module.exports = {
       }
     } catch (_) {}
 
-    const rssMin = parseInt(process.env.RSS_INTERVAL_MINUTES)           || 15;
+    const configuredRssMin = parseInt(process.env.RSS_INTERVAL_MINUTES, 10);
+    const rssMin = Math.min(Math.max(configuredRssMin || 2, 1), 5);
     const maMin  = parseInt(process.env.METALARCHIVES_INTERVAL_MINUTES) || 120;
     const fmtMin = m => m < 60 ? `${m} min` : `${m / 60}h`;
 
@@ -39,7 +40,7 @@ module.exports = {
       activeFeedCount,
       errorFeedCount,
       totalSeen,
-      nextRssCheck: `Intervalle: ${fmtMin(rssMin)}`,
+      nextRssCheck: `Intervalle: ${fmtMin(rssMin)} (urgences ≤ 5 min)`,
       nextSpotifyCheck: `Intervalle: ${fmtMin(maMin)} (MA)`,
     };
 

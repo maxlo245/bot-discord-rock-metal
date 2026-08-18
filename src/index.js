@@ -9,6 +9,7 @@ const path = require('path');
 const logger = require('./utils/logger');
 const Scheduler = require('./scheduler');
 const { RSS_FEEDS } = require('./config/feeds');
+let statusInterval = null;
 
 // ─── Validation de l'environnement ───────────────────────────────────────────
 if (!process.env.DISCORD_TOKEN) {
@@ -64,7 +65,7 @@ client.once('ready', async () => {
     statusIndex++;
   };
   updateStatus();
-  setInterval(updateStatus, 5 * 60 * 1000); // rotation toutes les 5 min
+  statusInterval = setInterval(updateStatus, 5 * 60 * 1000); // rotation toutes les 5 min
 
   // Initialiser les services (marquer les items existants comme vus)
   logger.info('[Init] Initialisation des services...');
@@ -119,20 +120,50 @@ async function deployCommands() {
       { body: commands }
     );
     logger.success('[Deploy] Commandes slash déployées globalement.');
+
+    // Supprime les anciennes commandes de développement qui apparaissent en double
+    // à côté des commandes globales dans le serveur configuré.
+    if (process.env.DISCORD_GUILD_ID) {
+      try {
+        await rest.put(
+          Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
+          { body: [] }
+        );
+        logger.success('[Deploy] Anciennes commandes locales supprimées.');
+      } catch (err) {
+        logger.warn(`[Deploy] Impossible de supprimer les commandes locales: ${err.message}`);
+      }
+    }
   } catch (err) {
     logger.error('[Deploy] Erreur déploiement:', err.message);
   }
 }
 
-// ─── Gestion des erreurs non catchées ────────────────────────────────────────
-process.on('unhandledRejection', (err) => {
-  logger.error('[Process] unhandledRejection:', err?.message || err);
-  // Ne PAS appeler process.exit — on laisse le bot tourner
-});
-process.on('uncaughtException', (err) => {
-  logger.error('[Process] uncaughtException:', err?.message || err);
-  // Ne PAS appeler process.exit — on laisse le bot tourner
-});
+// ─── Arrêt contrôlé et redémarrage supervisé ─────────────────────────────────
+let isShuttingDown = false;
+
+function stopBot(exitCode, reason) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  logger.info(`[Process] Arrêt du bot (${reason}).`);
+  if (statusInterval) clearInterval(statusInterval);
+  client.scheduler?.stop();
+  client.destroy();
+  process.exitCode = exitCode;
+  // Évite qu'un handle tiers bloque indéfiniment le redémarrage supervisé.
+  setTimeout(() => process.exit(exitCode), 5000).unref();
+}
+
+function restartAfterFatalError(type, err) {
+  logger.error(`[Process] ${type}:`, err?.message || err);
+  // PM2 et Railway relancent le processus après sa sortie avec le code 1.
+  stopBot(1, `erreur fatale: ${type}`);
+}
+
+process.on('unhandledRejection', (err) => restartAfterFatalError('unhandledRejection', err));
+process.on('uncaughtException', (err) => restartAfterFatalError('uncaughtException', err));
+process.once('SIGINT', () => stopBot(0, 'SIGINT'));
+process.once('SIGTERM', () => stopBot(0, 'SIGTERM'));
 
 // Evite le crash si discord.js émet un event 'error' sans listener
 client.on('error', (err) => {

@@ -89,6 +89,29 @@ function buildNewsEmbed(item, feed) {
 }
 
 /**
+ * Embed quotidien des actualités RSS livrées au cours des dernières 24 heures.
+ */
+function buildDailyDigestEmbed(items) {
+  const selectedItems = items
+    .sort((a, b) => Number(b.urgent) - Number(a.urgent) || Number(b.priority) - Number(a.priority))
+    .slice(0, 10);
+  const lines = selectedItems.map(entry => {
+    const title = truncate(entry.title, 180).replace(/[[\]]/g, '\\$&');
+    const source = truncate(entry.source, 60);
+    return entry.link
+      ? `• [${title}](${entry.link}) — ${source}\n  🔗 <${entry.link}>`
+      : `• **${title}** — ${source}`;
+  });
+
+  return new EmbedBuilder()
+    .setColor(colors.METAL)
+    .setTitle('📋 L’essentiel Metal & Rock — dernières 24 h')
+    .setDescription(lines.join('\n') || 'Aucune actualité essentielle n’a été publiée au cours des dernières 24 heures.')
+    .setFooter({ text: `${items.length} actualité(s) retenue(s) · Les décès et alertes critiques restent annoncés immédiatement.` })
+    .setTimestamp();
+}
+
+/**
  * Embed pour une sortie d'album Spotify
  */
 function buildSpotifyReleaseEmbed(album) {
@@ -214,6 +237,7 @@ function buildReleaseComponents(artist, title) {
 
 module.exports = {
   buildNewsEmbed,
+  buildDailyDigestEmbed,
   buildSpotifyReleaseEmbed,
   buildLastfmReleaseEmbed,
   buildMetalArchivesReleaseEmbed,
