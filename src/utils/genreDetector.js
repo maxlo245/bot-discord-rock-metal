@@ -1,7 +1,7 @@
 // src/utils/genreDetector.js
 // Détecte automatiquement le genre/sous-genre d'un article RSS
 
-const { GENRE_PATTERNS, SOURCE_DEFAULT_GENRES } = require('../config/genres');
+const { GENRE_PATTERNS, SOURCE_DEFAULT_GENRES, ARTIST_GENRE_OVERRIDES } = require('../config/genres');
 
 /**
  * Détecte le genre et sous-genre d'un article RSS.
@@ -18,6 +18,18 @@ function detectGenre(item, feed) {
     item.contentSnippet || item.summary || '',
     item.content || '',
   ].join(' ');
+
+  // Les artistes connus priment sur le genre supposé de la source RSS.
+  for (const artist of ARTIST_GENRE_OVERRIDES) {
+    if (artist.pattern.test(haystack)) {
+      return {
+        genre: artist.genre,
+        subgenre: artist.subgenre,
+        icon: artist.icon,
+        color: artist.color,
+      };
+    }
+  }
 
   // Parcourir les patterns du plus spécifique au plus générique
   for (const entry of GENRE_PATTERNS) {
