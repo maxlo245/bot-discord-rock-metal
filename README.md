@@ -86,8 +86,8 @@ npm start
 
 ## ⏱️ Veille continue
 
-- Le flux RSS est vérifié toutes les **2 minutes** par défaut, et ne peut pas dépasser **5 minutes** : les décès et annonces critiques sont triés et publiés en premier, avec mention du rôle configuré.
-- Un embed **« L'essentiel Metal & Rock »** est envoyé chaque jour à `19:00` (heure de Paris par défaut) avec les informations RSS livrées durant les dernières 24 heures et l'URL de chaque article.
+- Le flux RSS est vérifié toutes les **2 minutes** par défaut, et ne peut pas dépasser **5 minutes** : les articles sont enregistrés pour le récapitulatif. Seuls les décès et annonces critiques sont publiés immédiatement, avec mention du rôle configuré.
+- Un embed **« L'essentiel Metal & Rock »** est envoyé chaque jour à `19:00` (heure de Paris par défaut) avec les informations RSS collectées durant les dernières 24 heures et l'URL de chaque article.
 - Pour que cette veille fonctionne 24/7, déploie le bot sur Railway, Discloud ou un VPS avec PM2 : voir [DEPLOY.md](DEPLOY.md).
 
 Les variables `RSS_INTERVAL_MINUTES`, `DAILY_DIGEST_HOUR` et `DAILY_DIGEST_TIMEZONE` permettent d'adapter ces réglages. L'intervalle RSS reste plafonné à 5 minutes.

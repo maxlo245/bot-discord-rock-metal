@@ -130,9 +130,10 @@ class Scheduler {
   // ─────────────────────────────────────────────────────────────────────────
 
   /**
-   * Lance le check RSS et poste les nouveaux items.
-   * @param {string|null} targetGuildId — si fourni, poste uniquement sur ce serveur
-   * @returns {number} nombre d'annonces postées
+   * Collecte les nouveaux items RSS pour le récapitulatif quotidien.
+   * Seules les alertes urgentes sont publiées immédiatement, sauf pour /check.
+   * @param {string|null} targetGuildId — si fourni, /check poste uniquement sur ce serveur
+   * @returns {number} nombre d'annonces postées immédiatement
    */
   async runRss(targetGuildId = null) {
     if (this.isRssRunning) {
@@ -145,11 +146,7 @@ class Scheduler {
     try {
       const items = await fetchAllFeeds();
       for (const { item, feed, priority, urgent } of items) {
-        const embed = buildNewsEmbed(item, feed);
-        const configKey = feedCategoryToConfigKey(feed.category);
-        const deliveries = await this._sendToGuilds(embed, configKey, urgent, targetGuildId);
-        posted += deliveries;
-        if (!targetGuildId && deliveries > 0) {
+        if (!targetGuildId) {
           addToDailyDigest({
             title: item.title || 'Actualité sans titre',
             link: item.link || item.url || null,
@@ -159,8 +156,14 @@ class Scheduler {
             publishedAt: item.pubDate || new Date().toISOString(),
           });
         }
-        // Reste sous la fenêtre de cinq minutes même lors d'un lot complet.
-        if (!urgent) await new Promise(r => setTimeout(r, 1000));
+
+        // /check conserve son comportement manuel ; la veille automatique ne publie
+        // immédiatement que les décès et informations critiques.
+        if (!targetGuildId && !urgent) continue;
+
+        const embed = buildNewsEmbed(item, feed);
+        const configKey = feedCategoryToConfigKey(feed.category);
+        posted += await this._sendToGuilds(embed, configKey, urgent, targetGuildId);
       }
     } catch (err) {
       logger.error('[Scheduler] Erreur runRss:', err.message);
