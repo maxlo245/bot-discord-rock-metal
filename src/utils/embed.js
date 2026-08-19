@@ -92,9 +92,17 @@ function buildNewsEmbed(item, feed) {
  * Embed quotidien des actualités RSS livrées au cours des dernières 24 heures.
  */
 function buildDailyDigestEmbed(items) {
-  const selectedItems = items
-    .sort((a, b) => Number(b.urgent) - Number(a.urgent) || Number(b.priority) - Number(a.priority))
-    .slice(0, 10);
+  const byImportanceAndRecency = (a, b) => {
+    const importance = Number(Boolean(b.urgent)) - Number(Boolean(a.urgent))
+      || Number(Boolean(b.priority)) - Number(Boolean(a.priority));
+    if (importance) return importance;
+    return new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0);
+  };
+  const essentialItems = items.filter(entry => entry.urgent || entry.priority);
+  const selectedItems = [
+    ...essentialItems.sort(byImportanceAndRecency),
+    ...items.filter(entry => !entry.urgent && !entry.priority).sort(byImportanceAndRecency),
+  ].slice(0, 10);
   const lines = selectedItems.map(entry => {
     const title = truncate(entry.title, 180).replace(/[[\]]/g, '\\$&');
     const source = truncate(entry.source, 60);
@@ -107,7 +115,7 @@ function buildDailyDigestEmbed(items) {
     .setColor(colors.METAL)
     .setTitle('📋 L’essentiel Metal & Rock — dernières 24 h')
     .setDescription(lines.join('\n') || 'Aucune actualité essentielle n’a été publiée au cours des dernières 24 heures.')
-    .setFooter({ text: `${items.length} actualité(s) retenue(s) · Les décès et alertes critiques restent annoncés immédiatement.` })
+    .setFooter({ text: `${selectedItems.length} information(s) essentielle(s) sélectionnée(s) parmi ${items.length} · Les alertes critiques restent immédiates.` })
     .setTimestamp();
 }
 
