@@ -170,6 +170,18 @@ const PRIORITY_KEYWORDS = [
   /\bfull\s+album\s+stream\b/i,
   /\bworld\s+premiere\b/i,
 ];
+const URGENT_KEYWORDS = [
+  /\bdeath\s+of\b/i,
+  /\b(dies|died)\b/i,
+  /\bdead\s+(at|aged)\b/i,
+  /\bpasses?\s+away\b/i,
+  /\bhas\s+passed\b/i,
+  /\b(décède|décès)\b/i,
+  /\bmort\s+de\b/i,
+  /\bobituary\b/i,
+  /\bin\s+memoriam\b/i,
+  /\bcritical\s+(announcement|news|update)\b/i,
+];
 
 /**
  * Évalue si un article est suffisamment important pour être posté.
@@ -208,6 +220,14 @@ function isPriority(item) {
 }
 
 /**
+ * Retourne true pour les annonces qui doivent être diffusées avant toutes les autres.
+ */
+function isUrgent(item) {
+  const haystack = `${item.title || ''} ${item.contentSnippet || item.summary || ''}`;
+  return URGENT_KEYWORDS.some(pattern => pattern.test(haystack));
+}
+
+/**
  * Génère un identifiant unique pour un item RSS.
  */
 function getItemId(item) {
@@ -237,15 +257,24 @@ async function fetchFeed(feed) {
         const haystack = (item.title || '') + ' ' + (item.contentSnippet || item.summary || '');
         if (!STRICT_ROCK_METAL_KEYWORDS.some(p => p.test(haystack))) { markAsSeen(sourceKey, id); continue; }
       }
+      const priority = isPriority(item);
+      const urgent = isUrgent(item);
+      // Les informations essentielles passent outre la limite par source.
+      if (feedCount >= MAX_ITEMS_PER_FEED && !priority && !urgent) continue;
       // Déduplication globale par titre (évite les doublons cross-feeds)
       const normTitle = normalizeTitle(item.title);
       if (normTitle && globalSeenTitles.has(normTitle)) { markAsSeen(sourceKey, id); continue; }
       if (normTitle) globalSeenTitles.add(normTitle);
-      // Limite par feed — NE PAS marquer vu : sera repris au prochain cycle
-      if (feedCount >= MAX_ITEMS_PER_FEED) continue;
-      feedCount++;
+      if (!priority && !urgent) feedCount++;
       // Marquer comme vu seulement quand l'article sera posté
-      newItems.push({ item, feed, priority: isPriority(item), _sourceKey: sourceKey, _id: id });
+      newItems.push({
+        item,
+        feed,
+        priority,
+        urgent,
+        _sourceKey: sourceKey,
+        _id: id,
+      });
     }
 
     if (newItems.length > 0) {
@@ -281,8 +310,10 @@ async function fetchAllFeeds() {
     }
   }
 
-  // Trier : prioritaires d'abord, puis par date
+  // Trier : urgences d'abord, puis annonces prioritaires, puis par date
   allNew.sort((a, b) => {
+    if (a.urgent && !b.urgent) return -1;
+    if (!a.urgent && b.urgent) return 1;
     if (a.priority && !b.priority) return -1;
     if (!a.priority && b.priority) return 1;
     const da = a.item.pubDate ? new Date(a.item.pubDate) : new Date(0);
@@ -290,15 +321,18 @@ async function fetchAllFeeds() {
     return db - da;
   });
 
-  // Limiter le total d'articles par cycle
-  const limited = allNew.slice(0, MAX_ITEMS_PER_CHECK);
+  // Les décès et annonces prioritaires passent outre la limite globale du lot.
+  const essentialItems = allNew.filter(entry => entry.urgent || entry.priority);
+  const otherItems = allNew.filter(entry => !entry.urgent && !entry.priority);
+  const limited = [...essentialItems, ...otherItems]
+    .slice(0, Math.max(MAX_ITEMS_PER_CHECK, essentialItems.length));
   // Marquer comme vus UNIQUEMENT les articles qui vont être postés
   for (const entry of limited) {
     markAsSeen(entry._sourceKey, entry._id);
   }
   // Les articles au-delà de la limite ne sont PAS marqués vus → repris au prochain cycle
-  if (allNew.length > MAX_ITEMS_PER_CHECK) {
-    logger.info(`[RSS] ${allNew.length} items → limité à ${MAX_ITEMS_PER_CHECK} par cycle (${allNew.length - MAX_ITEMS_PER_CHECK} reportés)`);
+  if (allNew.length > limited.length) {
+    logger.info(`[RSS] ${allNew.length} items → ${limited.length} envoyés (${allNew.length - limited.length} reportés)`);
   }
 
   logger.info(`[RSS] Total: ${limited.length} nouveau(x) item(s) sur ${activeFeeds.length} flux actifs`);;
@@ -350,4 +384,4 @@ function getFeedStats() {
   return feedStats;
 }
 
-module.exports = { fetchAllFeeds, initializeFeeds, getFeedStats };
+module.exports = { fetchAllFeeds, initializeFeeds, getFeedStats, isPriority, isUrgent };

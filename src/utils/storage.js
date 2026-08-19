@@ -8,6 +8,7 @@ const logger = require('./logger');
 const DATA_DIR = path.join(__dirname, '../../data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const SEEN_FILE = path.join(DATA_DIR, 'seen.json');
+const DAILY_DIGEST_FILE = path.join(DATA_DIR, 'daily-digest.json');
 
 // Cache en mémoire pour seen.json (évite lectures disque répétées)
 let _seenCache = null;
@@ -106,6 +107,28 @@ function markManyAsSeen(source, ids) {
   writeJSON(SEEN_FILE, seen);
 }
 
+// ─── Récapitulatif quotidien ──────────────────────────────────────────────────
+const MAX_DAILY_DIGEST_ITEMS = 100;
+
+function getDailyDigest() {
+  return readJSON(DAILY_DIGEST_FILE, []);
+}
+
+function addToDailyDigest(item) {
+  const digest = getDailyDigest();
+  const identifier = item.link || `${item.source}:${item.title}`;
+  if (digest.some(entry => (entry.link || `${entry.source}:${entry.title}`) === identifier)) {
+    return;
+  }
+
+  digest.push(item);
+  writeJSON(DAILY_DIGEST_FILE, digest.slice(-MAX_DAILY_DIGEST_ITEMS));
+}
+
+function clearDailyDigest() {
+  writeJSON(DAILY_DIGEST_FILE, []);
+}
+
 module.exports = {
   getGuildConfig,
   setGuildConfig,
@@ -114,4 +137,7 @@ module.exports = {
   isAlreadySeen,
   markAsSeen,
   markManyAsSeen,
+  getDailyDigest,
+  addToDailyDigest,
+  clearDailyDigest,
 };

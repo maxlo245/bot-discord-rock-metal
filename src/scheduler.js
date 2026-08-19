@@ -6,8 +6,8 @@ const { fetchAllFeeds } = require('./services/rss');
 const { fetchNewReleases: fetchSpotifyReleases } = require('./services/spotify');
 const { fetchNewReleases: fetchLastfmReleases } = require('./services/lastfm');
 const { fetchRecentReleases: fetchMARelases, fetchNewBands } = require('./services/metalArchives');
-const { buildNewsEmbed, buildSpotifyReleaseEmbed, buildLastfmReleaseEmbed, buildMetalArchivesReleaseEmbed, buildReleaseComponents } = require('./utils/embed');
-const { getAllGuilds } = require('./utils/storage');
+const { buildNewsEmbed, buildDailyDigestEmbed, buildSpotifyReleaseEmbed, buildLastfmReleaseEmbed, buildMetalArchivesReleaseEmbed, buildReleaseComponents } = require('./utils/embed');
+const { getAllGuilds, addToDailyDigest, getDailyDigest, clearDailyDigest } = require('./utils/storage');
 const { EmbedBuilder } = require('discord.js');
 const colors = require('./config/colors');
 const logger = require('./utils/logger');
@@ -57,16 +57,25 @@ class Scheduler {
   constructor(client) {
     this.client = client;
     this.jobs = [];
+    this.isRssRunning = false;
   }
 
   /**
    * Démarre toutes les tâches planifiées.
    */
   start() {
-    const rssMinutes  = parseInt(process.env.RSS_INTERVAL_MINUTES)  || 15;
+    const configuredRssMinutes = parseInt(process.env.RSS_INTERVAL_MINUTES, 10);
+    // A missed RSS check must never delay urgent news past the requested five minutes.
+    const rssMinutes = Math.min(Math.max(configuredRssMinutes || 2, 1), 5);
     const spotMin     = parseInt(process.env.SPOTIFY_INTERVAL_MINUTES) || 60;
     const lastfmMin   = parseInt(process.env.LASTFM_INTERVAL_MINUTES) || 60;
     const maMin       = parseInt(process.env.METALARCHIVES_INTERVAL_MINUTES) || 120;
+    const digestHour  = Math.min(Math.max(parseInt(process.env.DAILY_DIGEST_HOUR, 10) || 19, 0), 23);
+    const digestTimezone = process.env.DAILY_DIGEST_TIMEZONE || 'Europe/Paris';
+
+    if (configuredRssMinutes > 5) {
+      logger.warn(`[Scheduler] RSS_INTERVAL_MINUTES=${configuredRssMinutes} plafonné à 5 min pour les alertes urgentes.`);
+    }
 
     // ─── RSS ────────────────────────────────────────────────────────────────
     const rssJob = cron.schedule(`*/${rssMinutes} * * * *`, async () => {
@@ -75,6 +84,14 @@ class Scheduler {
     }, { scheduled: false });
     rssJob.start();
     this.jobs.push(rssJob);
+
+    // ─── RÉCAPITULATIF QUOTIDIEN ──────────────────────────────────────────────
+    const digestJob = cron.schedule(`0 ${digestHour} * * *`, async () => {
+      logger.info('[Scheduler] ▶ Récapitulatif quotidien');
+      await this.runDailyDigest();
+    }, { scheduled: false, timezone: digestTimezone });
+    digestJob.start();
+    this.jobs.push(digestJob);
 
     // ─── SPOTIFY ────────────────────────────────────────────────────────────
     const spotJob = cron.schedule(`*/${spotMin} * * * *`, async () => {
@@ -100,7 +117,7 @@ class Scheduler {
     maJob.start();
     this.jobs.push(maJob);
 
-    logger.success(`[Scheduler] Démarré: RSS/${rssMinutes}min, Spotify/${spotMin}min, Last.fm/${lastfmMin}min, MA/${maMin}min`);
+    logger.success(`[Scheduler] Démarré: RSS/${rssMinutes}min, récapitulatif/${digestHour}h (${digestTimezone}), Spotify/${spotMin}min, Last.fm/${lastfmMin}min, MA/${maMin}min`);
   }
 
   stop() {
@@ -118,20 +135,57 @@ class Scheduler {
    * @returns {number} nombre d'annonces postées
    */
   async runRss(targetGuildId = null) {
+    if (this.isRssRunning) {
+      logger.warn('[Scheduler] Check RSS ignoré : le cycle précédent est encore en cours.');
+      return 0;
+    }
+
+    this.isRssRunning = true;
     let posted = 0;
     try {
       const items = await fetchAllFeeds();
-      for (const { item, feed } of items) {
+      for (const { item, feed, priority, urgent } of items) {
         const embed = buildNewsEmbed(item, feed);
         const configKey = feedCategoryToConfigKey(feed.category);
-        posted += await this._sendToGuilds(embed, configKey, false, targetGuildId);
-        // Délai de 10 secondes entre chaque annonce
-        await new Promise(r => setTimeout(r, 10000));
+        const deliveries = await this._sendToGuilds(embed, configKey, urgent, targetGuildId);
+        posted += deliveries;
+        if (!targetGuildId && deliveries > 0) {
+          addToDailyDigest({
+            title: item.title || 'Actualité sans titre',
+            link: item.link || item.url || null,
+            source: feed.name,
+            priority,
+            urgent,
+            publishedAt: item.pubDate || new Date().toISOString(),
+          });
+        }
+        // Reste sous la fenêtre de cinq minutes même lors d'un lot complet.
+        if (!urgent) await new Promise(r => setTimeout(r, 1000));
       }
     } catch (err) {
       logger.error('[Scheduler] Erreur runRss:', err.message);
+    } finally {
+      this.isRssRunning = false;
     }
     return posted;
+  }
+
+  /**
+   * Poste les actualités RSS essentielles livrées depuis le dernier récapitulatif.
+   */
+  async runDailyDigest() {
+    const items = getDailyDigest();
+    if (items.length === 0) {
+      logger.info('[Scheduler] Aucun item pour le récapitulatif quotidien.');
+      return 0;
+    }
+
+    const embed = buildDailyDigestEmbed(items);
+    const deliveries = await broadcastToGuilds(this.client, embed, 'daily');
+    if (deliveries > 0) {
+      clearDailyDigest();
+    }
+    return deliveries;
   }
 
   /**

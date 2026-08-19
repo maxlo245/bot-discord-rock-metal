@@ -4,6 +4,7 @@
 
 Railway détecte automatiquement Node.js et lance `npm start` depuis GitHub.
 **Coût** : ~$5 crédit offert/mois (largement suffisant pour un bot Discord).
+Choisis une offre Railway payante qui ne met pas le service en veille : elle autorise les redémarrages automatiques sans limite, indispensables pour conserver la connexion Discord 24/7.
 
 ### Étapes
 
@@ -24,18 +25,23 @@ Railway détecte automatiquement Node.js et lance `npm start` depuis GitHub.
    SPOTIFY_CLIENT_SECRET=<ton secret spotify>
    LASTFM_API_KEY=<ta clé lastfm>
    RSS_INTERVAL_MINUTES=2
+   DAILY_DIGEST_HOUR=19
+   DAILY_DIGEST_TIMEZONE=Europe/Paris
    SPOTIFY_INTERVAL_MINUTES=2
    LASTFM_INTERVAL_MINUTES=2
    METALARCHIVES_INTERVAL_MINUTES=60
    ```
 
 4. **Déploiement automatique**
-   - Railway lance `npm start` (= `node src/index.js`)
+   - `railway.json` lance `npm start` (= `node src/index.js`) et configure la politique de redémarrage `Always`
    - Chaque `git push` sur `main` redéploie automatiquement
 
 5. **Vérifier les logs**
    - Onglet **Deployments** → cliquer sur le déploiement actif → onglet **Logs**
    - Tu dois voir : `✅ Bot connecté en tant que bot rock/metal#9450`
+
+> Pour préserver le récapitulatif quotidien pendant un redéploiement, attache un volume persistant Railway au dossier `data/`.
+> L’offre gratuite Railway limite les redémarrages après une panne et ne permet pas la politique `Always`.
 
 ---
 
@@ -56,6 +62,24 @@ Hébergement gratuit spécialisé pour les bots Discord.
 3. Zipper le projet **sans** `node_modules/` et `.env`
 4. Upload sur Discloud → onglet **Apps** → **Upload**
 5. Ajouter les variables d'environnement dans le panel Discloud
+
+---
+
+## Option gratuite sans carte : Bot-Hosting.net
+
+Bot-Hosting.net propose un plan gratuit et des bots persistants, avec import GitHub et redéploiement à chaque push.
+
+1. Créer un compte sur [bot-hosting.net](https://bot-hosting.net).
+2. Créer un déploiement puis choisir **Import GitHub repository**.
+3. Sélectionner `maxlo245/bot-discord-rock-metal` et la branche à déployer.
+4. Dans **Startup & Env Variables**, définir la commande de démarrage :
+   ```bash
+   npm start
+   ```
+5. Ajouter les variables de la section Railway ci-dessus, notamment `DISCORD_TOKEN`, `DISCORD_CLIENT_ID` et les clés API optionnelles.
+6. Activer le redéploiement automatique sur push, puis vérifier que les logs affichent la connexion du bot.
+
+Surveille l'utilisation mémoire dans le tableau de bord : si le plan gratuit est trop limité pour les flux RSS, il faudra passer à une offre avec davantage de RAM.
 
 ---
 
@@ -82,9 +106,11 @@ Oracle offre **2 VMs ARM gratuites à vie** (4 OCPU, 24 GB RAM).
 5. Lancer avec PM2 :
    ```bash
    pm2 start ecosystem.config.js
-   pm2 save
    pm2 startup
+   # Exécuter ensuite la commande sudo affichée par PM2
+   pm2 save
    ```
+   `pm2 startup` relance automatiquement PM2 et le bot après chaque redémarrage du serveur ; `ecosystem.config.js` relance aussi le bot après une erreur fatale.
 
 ---
 
