@@ -343,4 +343,14 @@ const SOURCE_DEFAULT_GENRES = {
   'Prosthetic Records':   { genre: 'Metal',            subgenre: 'Progressive / Extreme Metal',  icon: '🧪', color: 0xc0392b },
 };
 
-module.exports = { GENRE_PATTERNS, SOURCE_DEFAULT_GENRES };
+// Artistes fréquemment cités par les sources mixtes. Ces exceptions sont
+// appliquées avant les mots-clés et le genre par défaut de la source.
+const ARTIST_GENRE_OVERRIDES = [
+  { pattern: /\bradiohead\b/i,      genre: 'Alternative Rock', subgenre: 'Art Rock / Alternative Rock', icon: '🎸', color: 0x85c1e9 },
+  { pattern: /\bthe smile\b/i,      genre: 'Alternative Rock', subgenre: 'Art Rock / Alternative Rock', icon: '🎸', color: 0x85c1e9 },
+  { pattern: /\bmuse\b/i,           genre: 'Alternative Rock', subgenre: 'Progressive / Alternative Rock', icon: '🎸', color: 0x85c1e9 },
+  { pattern: /\barctic monkeys\b/i, genre: 'Indie Rock',       subgenre: 'Indie / Alternative Rock', icon: '🎸', color: 0x85c1e9 },
+  { pattern: /\bthe cure\b/i,       genre: 'Gothic Rock',      subgenre: 'Gothic Rock / Post-Punk', icon: '🖤', color: 0x6c3483 },
+];
+
+module.exports = { GENRE_PATTERNS, SOURCE_DEFAULT_GENRES, ARTIST_GENRE_OVERRIDES };
